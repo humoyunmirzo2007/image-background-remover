@@ -1,42 +1,31 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import StreamingResponse
 from rembg import remove
-import cv2
-import numpy as np
 from PIL import Image
 import io
+import os
 
 app = FastAPI()
 
-@app.post("/remove-bg")
+@app.post("/image")
 async def remove_bg(file: UploadFile = File(...)):
+    # Faylni o'qish
     image_data = await file.read()
 
+    # Faylni Image ob'ektiga aylantirish
     input_image = Image.open(io.BytesIO(image_data))
 
-    image_without_bg = remove(input_image)
+    # Fonni o'chirish
+    output_image = remove(input_image)
 
-    image_without_bg = image_without_bg.convert("RGBA")
-
-    open_cv_image = np.array(image_without_bg)
-
-    b, g, r, alpha = cv2.split(open_cv_image)
-
-    _, alpha = cv2.threshold(alpha, 240, 255, cv2.THRESH_BINARY)
-
-    final_image = cv2.merge([b, g, r, alpha])
-
-    final_image_pil = Image.fromarray(final_image)
-
-    background_color = (222, 222, 223, 255)  # RGBA formatda (#dededf)
-    background_image = Image.new("RGBA", final_image_pil.size, background_color)
-
-    final_composite = Image.alpha_composite(background_image, final_image_pil)
-
+    # Yangi rasmni saqlash uchun io.BytesIO dan foydalanamiz
     output_io = io.BytesIO()
-    final_composite.save(output_io, format="PNG")
+    output_image.save(output_io, format='PNG')
     output_io.seek(0)  # Faylni boshidan o'qish uchun
 
-    return StreamingResponse(output_io, media_type="image/png", headers={
-        "Content-Disposition": f"attachment; filename={file.filename}"
-    })
+    # Faylni StreamingResponse yordamida qaytarish
+    return StreamingResponse(output_io, media_type="image/png")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
