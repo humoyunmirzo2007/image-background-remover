@@ -7,6 +7,10 @@ import os
 
 app = FastAPI()
 
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to my API!"}
+
 @app.post("/image")
 async def remove_bg(file: UploadFile = File(...)):
     # Faylni o'qish
@@ -28,4 +32,4 @@ async def remove_bg(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 4000)))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
